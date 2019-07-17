@@ -6,9 +6,13 @@ from config import Config
 from flask_sqlalchemy import SQLAlchemy
 #This import the database migration engine
 from flask_migrate import Migrate
+#This imports the Flask Login state manager
+from flask_login import LoginManager
 
 #This creates my app variable
 app = Flask(__name__)
+#Now I'm passing app to the Login Manager
+login = LoginManager(app)
 #Now I'm instantiating Config
 app.config.from_object(Config)
 #This is the database
