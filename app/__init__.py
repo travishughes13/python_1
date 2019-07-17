@@ -13,6 +13,8 @@ from flask_login import LoginManager
 app = Flask(__name__)
 #Now I'm passing app to the Login Manager
 login = LoginManager(app)
+#Here I require the user to login by directing them to the login page
+login.login_view = 'login'
 #Now I'm instantiating Config
 app.config.from_object(Config)
 #This is the database
