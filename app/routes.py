@@ -9,8 +9,11 @@ from app import app
 #Here, I'm going to import my LoginForm Class so that I can direct the server route to it
 from app.forms import LoginForm
 #Now I'm going to import the current_user and the login_user
-from flask_login import current_user, login_user, logout_user, login_required
+from flask_login import current_user, login_user, login_required
+from flask_login import logout_user
 from app.models import User
+from app import db
+from app.forms import RegistrationForm
 
 #I'm going to force login and handle user login
 @app.route('/login', methods=['GET', 'POST'])
@@ -33,7 +36,7 @@ def login():
 @app.route('/logout')
 def logout():
     logout_user()
-    return redirect(url_for('login'))
+    return redirect(url_for('index'))
 
 # Here, I'm declaring my variable routes and setting a placeholder for the user object
 @app.route('/')
@@ -54,3 +57,17 @@ def index():
         }
     ]
     return render_template('index.html', title='Home', posts=posts)
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
+    form = RegistrationForm()
+    if form.validate_on_submit():
+        user = User(username=form.username.data, email=form.email.data)
+        user.set_password(form.password.data)
+        db.session.add(user)
+        db.session.commit()
+        flash('Congratulations, you are now a registered user!')
+        return redirect(url_for('login'))
+    return render_template('register.html', title='Register', form=form)
