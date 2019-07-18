@@ -9,8 +9,7 @@ from app import app
 #Here, I'm going to import my LoginForm Class so that I can direct the server route to it
 from app.forms import LoginForm
 #Now I'm going to import the current_user and the login_user
-from flask_login import current_user, login_user, login_required
-from flask_login import logout_user
+from flask_login import current_user, login_user, login_required, logout_user
 from app.models import User
 from app import db
 from app.forms import RegistrationForm
@@ -33,6 +32,7 @@ def login():
         return redirect(next_page)
     return render_template('login.html', title='Sign In', form=form)
 
+# This is my logout route that calls my logout user function
 @app.route('/logout')
 def logout():
     logout_user()
@@ -58,6 +58,7 @@ def index():
     ]
     return render_template('index.html', title='Home', posts=posts)
 
+# This is my registration route
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if current_user.is_authenticated:
@@ -71,3 +72,14 @@ def register():
         flash('Congratulations, you are now a registered user!')
         return redirect(url_for('login'))
     return render_template('register.html', title='Register', form=form)
+
+# This is my user profile route. Note that I can variabilize the route with the <> brackets. I'm guessing that at a lter point we will come back and randomize this part
+@app.route('/user/<username>')
+@login_required
+def user(username):
+    user = User.query.filter_by(username=username).first_or_404()
+    posts = [
+        {'author': user, 'body': 'Test post #1'},
+        {'author': user, 'body': 'Test post #2'}
+    ]
+    return render_template('user.html', user=user, posts=posts)
