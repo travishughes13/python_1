@@ -13,6 +13,14 @@ from flask_login import current_user, login_user, login_required, logout_user
 from app.models import User
 from app import db
 from app.forms import RegistrationForm
+from datetime import datetime
+
+# I'm going to record the last time the user logged in
+@app.before_request
+def before_request():
+    if current_user.is_authenticated:
+        current_user.last_seen = datetime.utcnow()
+        db.session.commit()
 
 #I'm going to force login and handle user login
 @app.route('/login', methods=['GET', 'POST'])
