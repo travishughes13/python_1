@@ -10,9 +10,9 @@ from app import app
 from app.forms import LoginForm
 #Now I'm going to import the current_user and the login_user
 from flask_login import current_user, login_user, login_required, logout_user
-from app.models import User
+from app.models import User, Post
 from app import db
-from app.forms import RegistrationForm, EditProfileForm
+from app.forms import RegistrationForm, EditProfileForm, PostForm
 from datetime import datetime
 
 # I'm going to record the last time the user logged in
@@ -47,24 +47,19 @@ def logout():
     return redirect(url_for('index'))
 
 # Here, I'm declaring my variable routes and setting a placeholder for the user object
-@app.route('/')
-@app.route('/index')
+@app.route('/', methods=['GET', 'POST'])
+@app.route('/index', methods=['GET', 'POST'])
 @login_required
 def index():
-    # This defines the current user
-    user = {'username':'Travis'}
-    # This defines the posts that the user can see
-    posts = [
-        {
-            'author': {'username': 'John'},
-            'body': 'Beautiful day in Portland!'
-        },
-        {
-            'author': {'username': 'Susan'},
-            'body': 'The Avengers movie was so cool!'
-        }
-    ]
-    return render_template('index.html', title='Home', posts=posts)
+    form = PostForm()
+    if form.validate_on_submit():
+        post = Post(body=form.post.data, author=current_user)
+        db.session.add(post)
+        db.session.commit()
+        flash('That shit is out there, fuckwit!')
+        return redirect(url_for('index'))
+    posts = current_user.followed_posts().all()
+    return render_template("index.html", title='Home Page', form=form, posts=posts)
 
 # This is my registration route
 @app.route('/register', methods=['GET', 'POST'])
@@ -107,5 +102,38 @@ def edit_profile():
         form.about_me.data = current_user.about_me
     return render_template('edit_profile.html', title='Edit Profile', form=form)
 
-@app.route('.follow/<username>')
+@app.route('/follow/<username>')
 @login_required
+def follow(username):
+    user = User.query.filter_by(username=username).first()
+    if user is None:
+        flash("That bitch {} ain't found.".format(username))
+        return redirect(url_for('index'))
+    if user == current_user:
+        flash('You cannot follow yourself, dummy!')
+        return redirect(url_for('user', username=username))
+    current_user.follow(user)
+    db.session.commit()
+    flash('You are now following {}!'.format(username))
+    return redirect(url_for('user', username=username))
+
+@app.route('/unfollow/<username>')
+@login_required
+def unfollow(username):
+    user = User.query.filter_by(username=username).first()
+    if user is None:
+        flash('User {} not found, shithead!'.format(username))
+        return redirect(url_for('index'))
+    if user == current_user:
+        flash('You cannot unfollow yourself, dumbass!')
+        return redirect(url_for('user', username=username))
+    current_user.unfollow(user)
+    db.session.commit()
+    flash('You unfollowed that sucker named {}!'.format(username))
+    return redirect(url_for('user', username=username))
+
+@app.route('/explore')
+@login_required
+def explore():
+    posts = Post.query.order_by(Post.timestamp.desc()).all()
+    return render_template('index.html', title='Explore', posts=posts)
